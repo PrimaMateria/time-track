@@ -30,7 +30,8 @@ public class TimeTrack {
         final Options options = getOptions();
         final CommandLine commandLine = cliParser.parse(options, args);
 
-        final boolean hasNoOptions = commandLine.getOptions().length == 0;
+        final int optionsCount = commandLine.getOptions().length;
+        final boolean hasNoOptions = optionsCount == 0 || (optionsCount == 1 && commandLine.hasOption(OPT_DATABASE));
         if (commandLine.hasOption(OPT_HELP) || hasNoOptions) {
             HelpFormatter helpFormatter = new HelpFormatter();
             helpFormatter.printHelp("time-track or time-track-win.bat", options);

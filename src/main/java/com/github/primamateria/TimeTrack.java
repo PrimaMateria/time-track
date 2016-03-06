@@ -11,14 +11,15 @@ import java.time.format.DateTimeParseException;
 
 public class TimeTrack {
 
-    private static final String WAKEUP = "w";
-    private static final String SLEEP = "s";
-    private static final String PRINT_STATS = "p";
-    private static final String DATETIME = "d";
-    private static final String DATETIME_ARG = "datetime";
-    private static final String DATABASE = "database";
-    private static final String HELP = "h";
-    private static final String UNDEFINED = "-  ";
+    private static final String OPT_WAKEUP = "w";
+    private static final String OPT_SLEEP = "s";
+    private static final String OPT_PRINT_STATS = "p";
+    private static final String OPT_DATETIME = "d";
+    private static final String OPT_DATABASE = "database";
+    private static final String OPT_HELP = "h";
+
+    private static final String UNDEFINED_TIME = "-  ";
+
     private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("EEEE dd.MM.yyyy");
     private final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
     private final DateTimeFormatter argumentDatetimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
@@ -30,21 +31,21 @@ public class TimeTrack {
         final CommandLine commandLine = cliParser.parse(options, args);
 
         final boolean hasNoOptions = commandLine.getOptions().length == 0;
-        if (commandLine.hasOption(HELP) || hasNoOptions) {
+        if (commandLine.hasOption(OPT_HELP) || hasNoOptions) {
             HelpFormatter helpFormatter = new HelpFormatter();
             helpFormatter.printHelp("time-track or time-track-win.bat", options);
             return;
         }
 
         String dbLocation = null;
-        if (commandLine.hasOption(DATABASE)) {
-            dbLocation = commandLine.getOptionValue(DATABASE);
+        if (commandLine.hasOption(OPT_DATABASE)) {
+            dbLocation = commandLine.getOptionValue(OPT_DATABASE);
         }
 
         Database db = new Database(dbLocation);
         LocalDateTime now;
-        if (commandLine.hasOption(DATETIME)) {
-            final String datetimeArgument = commandLine.getOptionValue(DATETIME);
+        if (commandLine.hasOption(OPT_DATETIME)) {
+            final String datetimeArgument = commandLine.getOptionValue(OPT_DATETIME);
             try {
                 now = LocalDateTime.parse(datetimeArgument, argumentDatetimeFormatter);
             } catch (DateTimeParseException e) {
@@ -56,15 +57,15 @@ public class TimeTrack {
             now = LocalDateTime.now();
         }
 
-        if (commandLine.hasOption(WAKEUP)) {
+        if (commandLine.hasOption(OPT_WAKEUP)) {
             db.saveWakeupTime(now);
             System.out.println(String.format("Recorded wake up event on %s %s", now.format(dateFormatter), now.format(timeFormatter)));
-        } else if (commandLine.hasOption(SLEEP)) {
+        } else if (commandLine.hasOption(OPT_SLEEP)) {
             db.saveSleepTime(now);
             System.out.println(String.format("Recorded sleep event on %s %s", now.format(dateFormatter), now.format(timeFormatter)));
         }
 
-        if (commandLine.hasOption(PRINT_STATS)) {
+        if (commandLine.hasOption(OPT_PRINT_STATS)) {
             // for now just print current week stats
 
             System.out.println(getAnsiHeader(now));
@@ -73,15 +74,15 @@ public class TimeTrack {
             Duration totalWorkDuration = Duration.ZERO;
 
             final int maxReportedWeekday = Math.min(now.getDayOfWeek().getValue(), DayOfWeek.FRIDAY.getValue());
-            for (int weekday = DayOfWeek.MONDAY.getValue(); weekday <= maxReportedWeekday ; weekday++) {
+            for (int weekday = DayOfWeek.MONDAY.getValue(); weekday <= maxReportedWeekday; weekday++) {
                 final LocalDate day = now.minusDays(now.getDayOfWeek().getValue() - weekday).toLocalDate();
 
                 final LocalTime earliestWakeupTime = db.getEarliestWakeupTime(day);
                 final LocalTime latestSleepTime = db.getLatestSleepTime(day);
 
                 final String formattedDay = day.format(dateFormatter);
-                final String formattedStart = earliestWakeupTime == null ? UNDEFINED : earliestWakeupTime.format(timeFormatter);
-                final String formattedEnd = latestSleepTime == null ? UNDEFINED : latestSleepTime.format(timeFormatter);
+                final String formattedStart = earliestWakeupTime == null ? UNDEFINED_TIME : earliestWakeupTime.format(timeFormatter);
+                final String formattedEnd = latestSleepTime == null ? UNDEFINED_TIME : latestSleepTime.format(timeFormatter);
 
                 String formattedDeltaMessage = "";
                 if (earliestWakeupTime != null && latestSleepTime != null) {
@@ -146,17 +147,17 @@ public class TimeTrack {
 
     private Options getOptions() {
         Options cliOptions = new Options();
-        cliOptions.addOption(WAKEUP, false, "record wake up event");
-        cliOptions.addOption(SLEEP, false, "record sleep event");
-        cliOptions.addOption(PRINT_STATS, false, "print stats");
-        cliOptions.addOption(HELP, false, "shows help and exits");
+        cliOptions.addOption(OPT_WAKEUP, false, "record wake up event");
+        cliOptions.addOption(OPT_SLEEP, false, "record sleep event");
+        cliOptions.addOption(OPT_PRINT_STATS, false, "print stats");
+        cliOptions.addOption(OPT_HELP, false, "shows help and exits");
 
-        final Option databaseOption = Option.builder(DATABASE).hasArg().argName("location").optionalArg(false)
+        final Option databaseOption = Option.builder(OPT_DATABASE).hasArg().argName("location").optionalArg(false)
             .desc("database location folder. If not specified default location of 'db' folder in the execution folder will be used")
             .build();
         cliOptions.addOption(databaseOption);
 
-        final Option datetimeOption = Option.builder(DATETIME).hasArg().argName(DATETIME_ARG).optionalArg(false).desc(
+        final Option datetimeOption = Option.builder(OPT_DATETIME).hasArg().argName("datetime").optionalArg(false).desc(
             "specific datetime in format 31.12.2016 24:59. If specified with record event option, it will record event on that datetime. "
                 + "If specified with print stats option, it will print stats as looking on them on the datetime.").build();
         cliOptions.addOption(datetimeOption);

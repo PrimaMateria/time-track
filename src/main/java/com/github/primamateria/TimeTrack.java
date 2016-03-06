@@ -71,9 +71,9 @@ public class TimeTrack {
 
             Duration totalWorkDuration = Duration.ZERO;
 
-            final int todayWeekday = Math.min(now.getDayOfWeek().getValue(), DayOfWeek.SATURDAY.getValue());
-            for (int i = DayOfWeek.MONDAY.getValue(); i < todayWeekday; i++) {
-                final LocalDate day = now.minusDays(todayWeekday - i).toLocalDate();
+            final int maxReportedWeekday = Math.min(now.getDayOfWeek().getValue(), DayOfWeek.FRIDAY.getValue());
+            for (int weekday = DayOfWeek.MONDAY.getValue(); weekday <= maxReportedWeekday ; weekday++) {
+                final LocalDate day = now.minusDays(now.getDayOfWeek().getValue() - weekday).toLocalDate();
 
                 final LocalTime earliestWakeupTime = db.getEarliestWakeupTime(day);
                 final LocalTime latestSleepTime = db.getLatestSleepTime(day);

@@ -58,28 +58,6 @@
                 </executions>
             </plugin>
 
-            <!--<plugin>-->
-                <!--<groupId>org.apache.maven.plugins</groupId>-->
-                <!--<artifactId>maven-shade-plugin</artifactId>-->
-                <!--<executions>-->
-                    <!--<execution>-->
-                        <!--<phase>package</phase>-->
-                        <!--<goals>-->
-                            <!--<goal>shade</goal>-->
-                        <!--</goals>-->
-                        <!--<configuration>-->
-                            <!--<shadedArtifactAttached>true</shadedArtifactAttached>-->
-                            <!--<transformers>-->
-                                <!--<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">-->
-                                    <!--<mainClass>${fully.qualified.main.class}</mainClass>-->
-                                <!--</transformer>-->
-                            <!--</transformers>-->
-                        <!--</configuration>-->
-                    <!--</execution>-->
-                <!--</executions>-->
-            <!--</plugin>-->
-
-
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>appassembler-maven-plugin</artifactId>
@@ -99,8 +77,21 @@
                             <mainClass>${fully.qualified.main.class}</mainClass>
                             <id>time-track</id>
                             <commandLineArguments>
-                                <commandLineArgument>-database ../db</commandLineArgument>
+                                <commandLineArgument>-database $BASEDIR/db</commandLineArgument>
                             </commandLineArguments>
+                            <platforms>
+                                <platform>unix</platform>
+                            </platforms>
+                        </program>
+                        <program>
+                            <mainClass>${fully.qualified.main.class}</mainClass>
+                            <id>time-track-win</id>
+                            <commandLineArguments>
+                                <commandLineArgument>-database %BASEDIR%\db</commandLineArgument>
+                            </commandLineArguments>
+                            <platforms>
+                                <platform>windows</platform>
+                            </platforms>
                         </program>
                     </programs>
                 </configuration>

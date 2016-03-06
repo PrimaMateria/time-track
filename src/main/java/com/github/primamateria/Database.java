@@ -16,7 +16,7 @@ public class Database {
     public Database(String dbLocation) throws SQLException {
         dbLocation = prepareDbLocation(dbLocation);
         connection = DriverManager.getConnection("jdbc:hsqldb:file:" + dbLocation + "timetrackdb", "SA", "");
-        connection.setAutoCommit(true);
+        connection.setAutoCommit(false);
     }
 
     private String prepareDbLocation(String dbLocation) {
@@ -30,6 +30,7 @@ public class Database {
     }
 
     public void close() throws SQLException {
+        connection.commit();
         connection.close();
     }
 

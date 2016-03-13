@@ -17,6 +17,7 @@ public class TimeTrack {
     private static final String OPT_DATETIME = "d";
     private static final String OPT_DATABASE = "database";
     private static final String OPT_HELP = "h";
+    private static final String OPT_FORCE = "f";
 
     private static final String UNDEFINED_TIME = "-  ";
 
@@ -58,12 +59,16 @@ public class TimeTrack {
             now = LocalDateTime.now();
         }
 
+        final boolean isForced = commandLine.hasOption(OPT_FORCE);
+        final String eventMessage = isForced ? "forced event" : "event";
         if (commandLine.hasOption(OPT_WAKEUP)) {
-            db.saveWakeupTime(now);
-            System.out.println(String.format("Recorded wake up event on %s %s", now.format(dateFormatter), now.format(timeFormatter)));
+            db.saveWakeupTime(now, isForced);
+            System.out.println(
+                String.format("Recorded wake up " + eventMessage + " on %s %s", now.format(dateFormatter), now.format(timeFormatter)));
         } else if (commandLine.hasOption(OPT_SLEEP)) {
-            db.saveSleepTime(now);
-            System.out.println(String.format("Recorded sleep event on %s %s", now.format(dateFormatter), now.format(timeFormatter)));
+            db.saveSleepTime(now, isForced);
+            System.out.println(
+                String.format("Recorded sleep " + eventMessage + " on %s %s", now.format(dateFormatter), now.format(timeFormatter)));
         }
 
         if (commandLine.hasOption(OPT_PRINT_STATS)) {
@@ -78,16 +83,23 @@ public class TimeTrack {
             for (int weekday = DayOfWeek.MONDAY.getValue(); weekday <= maxReportedWeekday; weekday++) {
                 final LocalDate day = now.minusDays(now.getDayOfWeek().getValue() - weekday).toLocalDate();
 
-                final LocalTime earliestWakeupTime = db.getEarliestWakeupTime(day);
-                final LocalTime latestSleepTime = db.getLatestSleepTime(day);
+                LocalTime wakeupTime = db.getForcedWakeupTime(day);
+                if (wakeupTime == null) {
+                    wakeupTime = db.getEarliestWakeupTime(day);
+                }
+
+                LocalTime sleepTime = db.getForcedSleepTime(day);
+                if (sleepTime == null) {
+                    sleepTime = db.getLatestSleepTime(day);
+                }
 
                 final String formattedDay = day.format(dateFormatter);
-                final String formattedStart = earliestWakeupTime == null ? UNDEFINED_TIME : earliestWakeupTime.format(timeFormatter);
-                final String formattedEnd = latestSleepTime == null ? UNDEFINED_TIME : latestSleepTime.format(timeFormatter);
+                final String formattedStart = wakeupTime == null ? UNDEFINED_TIME : wakeupTime.format(timeFormatter);
+                final String formattedEnd = sleepTime == null ? UNDEFINED_TIME : sleepTime.format(timeFormatter);
 
                 String formattedDeltaMessage = "";
-                if (earliestWakeupTime != null && latestSleepTime != null) {
-                    Duration workDuration = Duration.between(earliestWakeupTime, latestSleepTime);
+                if (wakeupTime != null && sleepTime != null) {
+                    Duration workDuration = Duration.between(wakeupTime, sleepTime);
                     totalWorkDuration = totalWorkDuration.plus(workDuration);
 
                     formattedDeltaMessage = String.format(" %s", getFormattedDuration(workDuration));
@@ -152,6 +164,9 @@ public class TimeTrack {
         cliOptions.addOption(OPT_SLEEP, false, "record sleep event");
         cliOptions.addOption(OPT_PRINT_STATS, false, "print stats");
         cliOptions.addOption(OPT_HELP, false, "shows help and exits");
+        cliOptions.addOption(OPT_FORCE, false, "force event to be recorded. Can be used only with " + OPT_SLEEP + " or " + OPT_WAKEUP
+            + " options. It makes sense to force when " + OPT_DATETIME
+            + " option is specified. Forced event means, even if earlier wake up event or later sleep event was recorded, the datetime of forced event will be used to compute work time.");
 
         final Option databaseOption = Option.builder(OPT_DATABASE).hasArg().argName("location").optionalArg(false)
             .desc("database location folder. If not specified default location of 'db' folder in the execution folder will be used")

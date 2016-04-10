@@ -21,9 +21,9 @@ public class TimeTrack {
 
     private static final String UNDEFINED_TIME = "-  ";
 
-    private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("EEEE dd.MM.yyyy");
+    private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
     private final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
-    private final DateTimeFormatter argumentDatetimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
+    private final DateTimeFormatter datetimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
 
     public TimeTrack(String[] args) throws ParseException, SQLException {
         AnsiConsole.systemInstall();
@@ -48,11 +48,9 @@ public class TimeTrack {
         LocalDateTime now;
         if (commandLine.hasOption(OPT_DATETIME)) {
             final String datetimeArgument = commandLine.getOptionValue(OPT_DATETIME);
-            try {
-                now = LocalDateTime.parse(datetimeArgument, argumentDatetimeFormatter);
-            } catch (DateTimeParseException e) {
+            now = parseDatetimeArgument(datetimeArgument);
+            if (now == null) {
                 System.err.println("Unable to parse datetime: " + datetimeArgument + ". Please see help.");
-                e.printStackTrace();
                 return;
             }
         } else {
@@ -121,6 +119,21 @@ public class TimeTrack {
         new TimeTrack(args);
     }
 
+    private LocalDateTime parseDatetimeArgument(String datetimeArgument) {
+        LocalDateTime parsedDatetime;
+        try {
+            parsedDatetime = LocalDateTime.parse(datetimeArgument, datetimeFormatter);
+        } catch (DateTimeParseException e) {
+            try {
+                final LocalTime parsedTime = LocalTime.parse(datetimeArgument, timeFormatter);
+                parsedDatetime = LocalDateTime.of(LocalDate.now(), parsedTime);
+            } catch (DateTimeParseException e1) {
+                return null;
+            }
+        }
+        return parsedDatetime;
+    }
+
     private Ansi getAnsiHeader(LocalDateTime now) {
         //@formatter:off
         return Ansi.ansi()
@@ -174,7 +187,7 @@ public class TimeTrack {
         cliOptions.addOption(databaseOption);
 
         final Option datetimeOption = Option.builder(OPT_DATETIME).hasArg().argName("datetime").optionalArg(false).desc(
-            "specific datetime in format 31.12.2016 24:59. If specified with record event option, it will record event on that datetime. "
+            "specific datetime in format 31.12.2016 24:59. When only time is specified, today will be used as date. If specified with record event option, it will record event on that datetime. "
                 + "If specified with print stats option, it will print stats as looking on them on the datetime.").build();
         cliOptions.addOption(datetimeOption);
         return cliOptions;

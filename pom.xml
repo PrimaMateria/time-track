@@ -6,7 +6,7 @@
 
     <groupId>com.github.primamateria</groupId>
     <artifactId>time-track</artifactId>
-    <version>1.1</version>
+    <version>1.2</version>
     <properties>
         <fully.qualified.main.class>com.github.primamateria.TimeTrack</fully.qualified.main.class>
         <assemble.name>time-track</assemble.name>

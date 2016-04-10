@@ -21,9 +21,11 @@ public class TimeTrack {
 
     private static final String UNDEFINED_TIME = "-  ";
 
-    private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+    private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("EEEE dd.MM.yyyy");
     private final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
     private final DateTimeFormatter datetimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
+
+    private final Duration idealWorkDuration = Duration.ZERO.plus(Duration.ofHours(8)).plus(Duration.ofMinutes(40));
 
     public TimeTrack(String[] args) throws ParseException, SQLException {
         AnsiConsole.systemInstall();
@@ -95,15 +97,20 @@ public class TimeTrack {
                 final String formattedStart = wakeupTime == null ? UNDEFINED_TIME : wakeupTime.format(timeFormatter);
                 final String formattedEnd = sleepTime == null ? UNDEFINED_TIME : sleepTime.format(timeFormatter);
 
+                Duration deltaWorkDuration = null;
+                Duration deltaTotalWorkDuration = null;
                 String formattedDeltaMessage = "";
                 if (wakeupTime != null && sleepTime != null) {
                     Duration workDuration = Duration.between(wakeupTime, sleepTime);
                     totalWorkDuration = totalWorkDuration.plus(workDuration);
+                    deltaWorkDuration = workDuration.minus(idealWorkDuration);
+                    deltaTotalWorkDuration = totalWorkDuration.minus(idealWorkDuration.multipliedBy(weekday));
 
                     formattedDeltaMessage = String.format(" %s", getFormattedDuration(workDuration));
                 }
 
-                Ansi record = getAnsiRecord(formattedDay, formattedStart, formattedEnd, formattedDeltaMessage);
+                Ansi record = getAnsiRecord(formattedDay, formattedStart, formattedEnd, formattedDeltaMessage, deltaWorkDuration,
+                    deltaTotalWorkDuration);
                 System.out.println(record);
             }
 
@@ -143,9 +150,12 @@ public class TimeTrack {
         //@formatter:on
     }
 
-    private Ansi getAnsiRecord(String formattedDay, String formattedStart, String formattedEnd, String formattedDeltaMessage) {
+    private Ansi getAnsiRecord(String formattedDay, String formattedStart, String formattedEnd, String formattedDeltaMessage,
+        Duration deltaWorkDuration, Duration deltaTotalWorkDuration) {
+
+
         //@formatter:off
-        return Ansi.ansi()
+        Ansi record = Ansi.ansi()
                         .fg(Ansi.Color.BLUE).a(String.format("%20s", formattedDay))
                         .reset().a(" from ")
                         .fg(Ansi.Color.YELLOW).a(String.format("%5s", formattedStart))
@@ -154,6 +164,17 @@ public class TimeTrack {
                         .fg(Ansi.Color.CYAN).a(formattedDeltaMessage)
                         .reset();
         //@formatter:on
+
+        if (deltaTotalWorkDuration != null && deltaWorkDuration != null) {
+            //@formatter:off
+            record = record.reset().a(" [")
+                        .a(getAnsiDeltaDuration(deltaWorkDuration))
+                        .reset().a(" / ")
+                        .a(getAnsiDeltaDuration(deltaTotalWorkDuration))
+                        .reset().a("]");
+            //@formatter:on
+        }
+        return record;
     }
 
     private Ansi getAnsiSummary(Duration totalWorkDuration) {
@@ -166,9 +187,24 @@ public class TimeTrack {
         //@formatter:on
     }
 
-    private String getFormattedDuration(Duration totalWorkDuration) {
-        long s = totalWorkDuration.getSeconds();
+    private String getFormattedDuration(Duration duration) {
+        long s = Math.abs(duration.getSeconds());
         return String.format("%dh %02dm", s / 3600, (s % 3600) / 60);
+    }
+
+    private Ansi getAnsiDeltaDuration(Duration deltaDuration) {
+        if (deltaDuration == null)
+            return null;
+
+        final boolean isNegative = deltaDuration.isNegative();
+        String sign = isNegative ? "-" : "+";
+        String formattedDuration = getFormattedDuration(deltaDuration);
+
+        //@formatter:off
+        return Ansi.ansi()
+                    .fg(isNegative ? Ansi.Color.RED : Ansi.Color.GREEN).a(sign + formattedDuration)
+                    .reset();
+        //@formatter:on
     }
 
     private Options getOptions() {

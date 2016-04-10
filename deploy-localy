@@ -1,0 +1,5 @@
+rm -r ~/apps-terminal/time-track/bin/
+rm -r ~/apps-terminal/time-track/repo/
+cp -r target/time-track/bin/ ~/apps-terminal/time-track/
+cp -r target/time-track/repo/ ~/apps-terminal/time-track/
+

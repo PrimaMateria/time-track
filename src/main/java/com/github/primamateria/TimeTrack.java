@@ -155,6 +155,8 @@ public class TimeTrack {
         return Ansi.ansi()
                     .a("Today is ")
                     .fg(Ansi.Color.BLUE).a(now.toLocalDate().format(dateFormatter))
+                    .reset().a(" ")
+                    .fg(Ansi.Color.YELLOW).a(now.toLocalTime().format(timeFormatter))
                     .reset();
         //@formatter:on
     }

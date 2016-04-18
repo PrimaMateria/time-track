@@ -157,6 +157,9 @@ public class TimeTrack {
                     .fg(Ansi.Color.BLUE).a(now.toLocalDate().format(dateFormatter))
                     .reset().a(" ")
                     .fg(Ansi.Color.YELLOW).a(now.toLocalTime().format(timeFormatter))
+                    .reset().a("\n")
+                    .a("Ideal work duration is set to ")
+                    .fg(Ansi.Color.CYAN).a(getFormattedDuration(idealWorkDuration))
                     .reset();
         //@formatter:on
     }

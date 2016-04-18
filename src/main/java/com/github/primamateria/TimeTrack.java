@@ -100,13 +100,22 @@ public class TimeTrack {
                 Duration deltaWorkDuration = null;
                 Duration deltaTotalWorkDuration = null;
                 String formattedDeltaMessage = "";
-                if (wakeupTime != null && sleepTime != null) {
-                    Duration workDuration = Duration.between(wakeupTime, sleepTime);
-                    totalWorkDuration = totalWorkDuration.plus(workDuration);
-                    deltaWorkDuration = workDuration.minus(idealWorkDuration);
-                    deltaTotalWorkDuration = totalWorkDuration.minus(idealWorkDuration.multipliedBy(weekday));
+                if (wakeupTime != null) {
+                    Duration workDuration = null;
 
-                    formattedDeltaMessage = String.format(" %s", getFormattedDuration(workDuration));
+                    if (day.isEqual(now.toLocalDate())) {
+                        workDuration = Duration.between(wakeupTime, now.toLocalTime());
+                    } else if (sleepTime != null) {
+                        workDuration = Duration.between(wakeupTime, sleepTime);
+                    }
+
+                    if (workDuration != null) {
+                        totalWorkDuration = totalWorkDuration.plus(workDuration);
+                        deltaWorkDuration = workDuration.minus(idealWorkDuration);
+                        deltaTotalWorkDuration = totalWorkDuration.minus(idealWorkDuration.multipliedBy(weekday));
+
+                        formattedDeltaMessage = String.format(" %s", getFormattedDuration(workDuration));
+                    }
                 }
 
                 Ansi record = getAnsiRecord(formattedDay, formattedStart, formattedEnd, formattedDeltaMessage, deltaWorkDuration,
@@ -152,7 +161,6 @@ public class TimeTrack {
 
     private Ansi getAnsiRecord(String formattedDay, String formattedStart, String formattedEnd, String formattedDeltaMessage,
         Duration deltaWorkDuration, Duration deltaTotalWorkDuration) {
-
 
         //@formatter:off
         Ansi record = Ansi.ansi()
